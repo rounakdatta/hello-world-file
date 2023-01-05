@@ -1,11 +1,10 @@
-FROM golang:1.14-alpine
-WORKDIR /go/src/app
-COPY . .
-RUN go install -v ./...
-RUN ls /go/bin
+FROM golang:1.15
 
-FROM alpine:latest  
-RUN apk --no-cache add ca-certificates
-WORKDIR /root/
-COPY --from=0 /go/bin/app .
-CMD ["/root/app"]
+WORKDIR /app
+COPY go.* ./
+RUN go mod download
+
+COPY . ./
+RUN go build main.go
+
+CMD ["/app/main"]

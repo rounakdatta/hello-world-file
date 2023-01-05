@@ -19,7 +19,7 @@ func readAllFilesToStringFromDirectory(directoryPath string) string {
 	directoryContents := ""
 	for _, file := range files {
 		if !file.IsDir() {
-			fileContent, err := os.ReadFile(filepath.Join(directoryPath, file.Name()))
+			fileContent, err := ioutil.ReadFile(filepath.Join(directoryPath, file.Name()))
 			if err == nil {
 				directoryContents += fmt.Sprintf("%s\n---\n%s\n\n", file.Name(), fileContent)
 			}
