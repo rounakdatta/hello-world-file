@@ -22,15 +22,17 @@ func applyJsonIndentation(contents map[string]interface{}) string {
 func formatFileContent(fileContent string) map[string]interface{} {
 	contentJson := make(map[string]interface{})
 	_ = json.Unmarshal([]byte(fileContent), &contentJson)
+
+	// specific use-case, wouldn't panic on key absence
 	delete(contentJson, "valueTypeUrn")
 	delete(contentJson, "hidden")
 	return contentJson
 }
 
-func readAllFilesToStringFromDirectory(directoryPath string) string {
+func readAllFilesToStringFromDirectory(directoryPath string, isJsonMode bool) string {
 	files, err := ioutil.ReadDir(directoryPath)
 	if err != nil {
-		return "DIRECTORY INVALID"
+		return err.Error()
 	}
 
 	directoryContents := make(map[string]interface{})
@@ -38,8 +40,11 @@ func readAllFilesToStringFromDirectory(directoryPath string) string {
 		if !file.IsDir() {
 			fileContent, err := ioutil.ReadFile(filepath.Join(directoryPath, file.Name()))
 			if err == nil {
-				directoryContents[file.Name()] = formatFileContent(string(fileContent))
-
+				if !isJsonMode {
+					directoryContents[file.Name()] = string(fileContent)
+				} else {
+					directoryContents[file.Name()] = formatFileContent(string(fileContent))
+				}
 			}
 		}
 	}
@@ -48,7 +53,13 @@ func readAllFilesToStringFromDirectory(directoryPath string) string {
 
 func handler(w http.ResponseWriter, r *http.Request) {
 	directoryPath := os.Getenv("DIRECTORY")
-	displayText := readAllFilesToStringFromDirectory(directoryPath)
+	// json mode flag controls whether the environment variable value would have to be deserialized from a JSON or not
+	isJsonMode := false
+	if os.Getenv("JSON_MODE") != "" {
+		isJsonMode = true
+	}
+
+	displayText := readAllFilesToStringFromDirectory(directoryPath, isJsonMode)
 	fmt.Fprintf(w, displayText)
 }
 
